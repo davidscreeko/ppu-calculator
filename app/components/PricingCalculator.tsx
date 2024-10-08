@@ -6,7 +6,8 @@ import { Label } from "@/app/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/app/components/ui/card"
 import { Alert, AlertDescription } from "@/app/components/ui/alert"
-import { Separator } from "@/app/components/ui/separator" // Updated import statement
+import { Separator } from "@/app/components/ui/separator"
+import { Analytics } from "@vercel/analytics/react"
 
 interface CalculatedData {
   totalAcquisitionCostPerAsset: number;
@@ -225,6 +226,7 @@ export default function PricingCalculator() {
                 </div>
               </div>
             </div>
+            <Analytics />
 
             {results && (
               <div className="mt-8 space-y-4 bg-gray-50 p-6 rounded-lg">
