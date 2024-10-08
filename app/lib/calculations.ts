@@ -28,7 +28,6 @@ function PV(rate: number, nper: number, pmt: number, fv: number, type: number = 
     return pv;  // Return positive PV
 }
 
-
 // Return the pricing calculation
 export function calculatePricing(data: FormData): CalculationResults {
 
@@ -115,33 +114,8 @@ export function calculatePricing(data: FormData): CalculationResults {
 
   console.log("TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT:", TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT);
 
-  // Calculate total investment cost
-  const totalInvestmentCost = data.acquisitionCostCore + data.acquisitionCostAccessories + data.projectCost;
-  console.log("totalInvestmentCost:", totalInvestmentCost);
-
-  // Calculate depreciation per year
-  const yearlyDepreciationCore = (data.acquisitionCostCore * (100 - data.residualValueCore) / 100) / (data.minimumUsageTerm / 12);
-  console.log("yearlyDepreciationCore:", yearlyDepreciationCore);
-
-  const yearlyDepreciationAccessories = (data.acquisitionCostAccessories * (100 - data.residualValueAccessories) / 100) / (data.minimumUsageTerm / 12);
-  console.log("yearlyDepreciationAccessories:", yearlyDepreciationAccessories);
-
-  // Calculate total yearly cost per asset
-  const yearlyMaintenanceCostPerAsset = (data.maintenanceFeeCore + data.maintenanceFeeAccessories) / data.numberOfAssets;
-  console.log("yearlyMaintenanceCostPerAsset:", yearlyMaintenanceCostPerAsset);
-
-  const totalYearlyCostPerAsset = (yearlyDepreciationCore + yearlyDepreciationAccessories) / data.numberOfAssets + yearlyMaintenanceCostPerAsset;
-  console.log("totalYearlyCostPerAsset:", totalYearlyCostPerAsset);
-
-  // Calculate monthly payments
-  const monthlyAdvancePaymentPerAsset = totalYearlyCostPerAsset / 12;
-  console.log("monthlyAdvancePaymentPerAsset:", monthlyAdvancePaymentPerAsset);
-
-  const monthlyAdvancePaymentTotal = monthlyAdvancePaymentPerAsset * data.numberOfAssets;
-  console.log("monthlyAdvancePaymentTotal:", monthlyAdvancePaymentTotal);
-
-// Calculate PV_CORE_ASSETS_RESALE_RELATIVE
-const PV_CORE_ASSETS_RESALE_RELATIVE = PV(
+  // Calculate PV_CORE_ASSETS_RESALE_RELATIVE
+  const PV_CORE_ASSETS_RESALE_RELATIVE = PV(
     MARKET_INTEREST_RATE * (data.minimumUsageTerm / 12),  // Rate adjusted for time
     1,  // Single period, as we're calculating resale after term
     0,  // No additional payments
@@ -149,11 +123,11 @@ const PV_CORE_ASSETS_RESALE_RELATIVE = PV(
     0   // End of the period (standard)
   );
   console.log("PV_CORE_ASSETS_RESALE_RELATIVE:", PV_CORE_ASSETS_RESALE_RELATIVE);
-  
+
   // Calculate PV_CORE_ASSETS_RESALE_ABSOLUTE
   const PV_CORE_ASSETS_RESALE_ABSOLUTE = PV_CORE_ASSETS_RESALE_RELATIVE * data.acquisitionCostCore;
   console.log("PV_CORE_ASSETS_RESALE_ABSOLUTE:", PV_CORE_ASSETS_RESALE_ABSOLUTE);
-  
+
   // Calculate PV_ACCESSORIES_RESALE_RELATIVE
   const PV_ACCESSORIES_RESALE_RELATIVE = PV(
     MARKET_INTEREST_RATE * (data.minimumUsageTerm / 12),  // Rate adjusted for time
@@ -163,18 +137,41 @@ const PV_CORE_ASSETS_RESALE_RELATIVE = PV(
     0   // End of the period
   );
   console.log("PV_ACCESSORIES_RESALE_RELATIVE:", PV_ACCESSORIES_RESALE_RELATIVE);
-  
+
   // Calculate PV_ACCESSORIES_RESALE_ABSOLUTE
   const PV_ACCESSORIES_RESALE_ABSOLUTE = PV_ACCESSORIES_RESALE_RELATIVE * data.acquisitionCostAccessories;
   console.log("PV_ACCESSORIES_RESALE_ABSOLUTE:", PV_ACCESSORIES_RESALE_ABSOLUTE);
 
+  // Calculate PV_USAGE_PAYMENTS_WORST_CASE_ABSOLUTE
+  const PV_USAGE_PAYMENTS_WORST_CASE_ABSOLUTE = -PV(
+    MARKET_INTEREST_RATE, 
+    data.minimumUsageTerm, 
+    (((TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT * data.expectedConsumption * (1 - data.utilizationRiskOffloading / 100)) / 12) * data.numberOfAssets) - 
+    ((data.expectedConsumption / 12 * data.numberOfAssets * (1 - data.utilizationRiskOffloading / 100) * data.consumablesCost * (1 + UPLIFT_ON_CONSUMABLES))), 
+    0, 
+    1
+  ) + PV(
+    MARKET_INTEREST_RATE * (data.minimumUsageTerm / 12), 
+    1, 
+    ((TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT * data.expectedConsumption) - 
+    (TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT * data.expectedConsumption * (1 - data.utilizationRiskOffloading / 100)) - 
+    (data.expectedConsumption * data.numberOfAssets * data.utilizationRiskOffloading / 100 * data.consumablesCost * (1 + UPLIFT_ON_CONSUMABLES))),
+    0, 
+    0
+  );
+
+  console.log("PV_USAGE_PAYMENTS_WORST_CASE_ABSOLUTE:", PV_USAGE_PAYMENTS_WORST_CASE_ABSOLUTE);
+
   return {
-    totalInvestmentCost,
+    totalInvestmentCost: data.acquisitionCostCore + data.acquisitionCostAccessories + data.projectCost,
     payPer: data.billingMetric,
-    costPerUnit: TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT,  // Updated cost per unit with the final formula
-    totalUsageCostPerAsset: totalYearlyCostPerAsset,
-    additionalCost: totalYearlyCostPerAsset / 2, // Example additional cost calculation
-    monthlyAdvancePaymentPerAsset,
-    monthlyAdvancePaymentTotal
+    costPerUnit: TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT,  
+    totalUsageCostPerAsset: TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT * data.expectedConsumption,
+    additionalCost: TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT * data.expectedConsumption*(1-data.utilizationRiskOffloading/100),  
+    monthlyAdvancePaymentPerAsset: TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT*data.expectedConsumption*(1-data.utilizationRiskOffloading/100)/12,
+    monthlyAdvancePaymentTotal: (TOTAL_USAGE_COST_PER_ASSET_PER_METERED_UNIT*data.expectedConsumption*(1-data.utilizationRiskOffloading/100)/12)*data.numberOfAssets,
+    //PV_CORE_ASSETS_RESALE_ABSOLUTE,
+    //PV_ACCESSORIES_RESALE_ABSOLUTE,
+    //PV_USAGE_PAYMENTS_WORST_CASE_ABSOLUTE
   };
 }

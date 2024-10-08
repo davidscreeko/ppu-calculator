@@ -242,7 +242,7 @@ export default function PricingCalculator() {
                     <Label className="text-sm font-medium text-gray-700">Cost per Unit</Label>
                     <Input type="text" value={formatCurrency(results.costPerUnit)} readOnly className="mt-1 bg-gray-100" />
                   </div>
-                  {/* <div>
+                  <div>
                     <Label className="text-sm font-medium text-gray-700">Total Usage Cost, per Asset, p.a.</Label>
                     <Input type="text" value={formatCurrency(results.totalUsageCostPerAsset)} readOnly className="mt-1 bg-gray-100" />
                   </div>
@@ -257,7 +257,7 @@ export default function PricingCalculator() {
                   <div className="md:col-span-2">
                     <Label className="text-sm font-medium text-gray-700">Monthly Advance Payment, Total</Label>
                     <Input type="text" value={formatCurrency(results.monthlyAdvancePaymentTotal)} readOnly className="mt-1 bg-gray-100" />
-                  </div> */}
+                  </div> 
                 </div>
               </div>
             )}
